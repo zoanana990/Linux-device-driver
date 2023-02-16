@@ -20,3 +20,9 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+
+# module
+*.symvers
+*.info
+*.order
+
