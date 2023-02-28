@@ -1,8 +1,8 @@
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
-
-
+#include <linux/device.h>
+#include <linux/kdev_t.h>
 #define DEV_MEM_SIZE 512
 
 /* Add module description */
@@ -45,13 +45,25 @@ int pcd_release(struct inode *inode, struct file *filp)
 }
 
 /* file oeprations of the driver */
-struct file_operations pcd_ops;
+struct file_operations pcd_ops = 
+{
+    .open = pcd_open,
+    .write = pcd_write,
+    .read = pcd_read,
+    .llseek = pcd_lseek,
+    .release = pcd_release,
+};
 
+struct class *class_pcd;
+struct device *device_pcd;
 
 static int __init pcd_module_init(void)
 {
     /* 1. Dynamically allocate a device number */
     alloc_chrdev_region(&device_number, 0, 1, "pcd");
+    pr_info("Device number <major>:<minor> = %d:%d\n",
+            MAJOR(device_number), MINOR(device_number));
+
 
     /* 2. Make character device registration through the VFS */
     cdev_init(&pcd_cdev, &pcd_ops);
@@ -60,11 +72,23 @@ static int __init pcd_module_init(void)
     cdev_add(&pcd_cdev, device_number, 1);
     pcd_cdev.owner = THIS_MODULE;
     
+    /* 4. create device class under /sys/class */
+    class_cpd = class_create(THIS_MODULE, "pcd_class");
+
+    /* 5. populate the sysfs with the device information */
+    device_pcd = device_create(class_pcd, NULL, device_number, NULL, "pcd");
+    pr_info("Module init successfully\n");
+
     return 0;
 }
 
 static void __exit pcd_module_cleanup(void)
 {
+    device_destroy(class_pcd, device_number);
+    class_destroy(class_pcd);
+    udev_del(&pcd_cdev);
+    unregister_chrdev_region(device_number, 1);
+    pr_info("Module cleanup successfully\n");
     return;
 }
 
