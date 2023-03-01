@@ -204,85 +204,88 @@ struct file_operations pcd_ops =
 
 static int __init pcd_module_init(void)
 {
-    return 0;
-
-#if 0
     /* return value for the linux function */
-    int ret;
+    int ret, i = 0;
 
     /* 1. Dynamically allocate a device number */
-    ret = alloc_chrdev_region(&device_number, 0, 1, "pcd");
+    ret = alloc_chrdev_region(&pcdrv_data.device_number, 0, NO_OF_DEVICES, "pcd");
     if(ret < 0)
     {
 	pr_err("Allocate character device failed\n");
 	goto fail;
     }
 
-    
     pr_info("Device number <major>:<minor> = %d:%d\n",
-            MAJOR(device_number), MINOR(device_number));
+            MAJOR(pcdrv_data.device_number), MINOR(pcdrv_data.device_number));
 
-
-    /* 2. Make character device registration through the VFS */
-    cdev_init(&pcd_cdev, &pcd_ops);
-    pcd_cdev.owner = THIS_MODULE;
-    
-    /* 3. Add a character device to the kernel VFS */
-    ret = cdev_add(&pcd_cdev, device_number, 1);
-    if(ret < 0)
-    {
-	pr_err("Add character device failed\n");
-	goto unregister_character_device;
-    }
-    
-    /* 4. create device class under /sys/class */
-    class_pcd = class_create(THIS_MODULE, "pcd_class");
-    if(IS_ERR(class_pcd))
+    /* 2. create device class under /sys/class */
+    pcdrv_data.class_pcd = class_create(THIS_MODULE, "pcd_class");
+    if(IS_ERR(pcdrv_data.class_pcd))
     {
 	pr_err("Class create failed\n");
-	ret = PTR_ERR(class_pcd);
-	goto cdev_del;
-    }    
-
-    /* 5. populate the sysfs with the device information */
-    device_pcd = device_create(class_pcd, NULL, device_number, NULL, "pcd");
-    if(IS_ERR(device_pcd))
-    {
-	pr_err("Device create failed\n");
-	ret = PTR_ERR(device_pcd);
-	goto class_del;
+	ret = PTR_ERR(pcdrv_data.class_pcd);
+	goto unreg_chrdev;
     }
 
+    for(i = 0; i < NO_OF_DEVICES; i++)
+    {
+	/* 3. Make character device registration through the VFS 
+	 *    cdev_init(struct cdev, file_operations);
+	 */
+	cdev_init(&pcdrv_data.pcdev_data[i].cdev, &pcd_ops);
+
+	/* Initialize the character device owner */
+	pcdrv_data.pcdev_data[i].cdev.owner = THIS_MODULE;
+    
+	/* 4. Add a character device to the kernel VFS */
+	ret = cdev_add(&pcdrv_data.pcdev_data[i].cdev, pcdrv_data.device_number+i, 1);
+	if(ret < 0)
+	{
+	    pr_err("Add character device failed\n");
+	    goto class_del;
+	}
+    
+	/* 5. populate the sysfs with the device information */
+	pcdrv_data.device_pcd = device_create(pcdrv_data.class_pcd, NULL, pcdrv_data.device_number+i,
+					      NULL, "pcdev-%d", i+1);
+	if(IS_ERR(pcdrv_data.device_pcd))
+	{
+	    pr_err("Device create failed\n");
+	    ret = PTR_ERR(pcdrv_data.device_pcd);
+	    goto cdev_del;
+	}
+    }
+   
     pr_info("Module init successfully\n");
 
     return 0;
-
 /*---------------------------------------------------------------- ERROR HANDLE */
 class_del:
-    class_destroy(class_pcd);
-
 cdev_del:
-    cdev_del(&pcd_cdev);
+    for(; i > 0; i--)
+    {
+	device_destroy(pcdrv_data.class_pcd, pcdrv_data.device_number + i);
+	cdev_del(&pcdrv_data.pcdev_data[i].cdev);
+    }
+    class_destroy(pcdrv_data.class_pcd);
 
-unregister_character_device:
-    unregister_chrdev_region(device_number, 1);
-    pr_err("Module init failed\n");
-
+unreg_chrdev:
+    unregister_chrdev_region(pcdrv_data.device_number, NO_OF_DEVICES);
 fail:
     return ret;
-
-#endif
 }
 
 static void __exit pcd_module_cleanup(void)
 {
-#if 0
-    device_destroy(class_pcd, device_number);
-    class_destroy(class_pcd);
-    cdev_del(&pcd_cdev);
-    unregister_chrdev_region(device_number, 1);
-    pr_info("Module cleanup successfully\n");
-#endif
+    int i;
+    for(i = 0; i < NO_OF_DEVICES; i--)
+    {
+	device_destroy(pcdrv_data.class_pcd, pcdrv_data.device_number + i);
+	cdev_del(&pcdrv_data.pcdev_data[i].cdev);
+    }
+    class_destroy(pcdrv_data.class_pcd);
+    unregister_chrdev_region(pcdrv_data.device_number, NO_OF_DEVICES);
+
     return;
 }
 
