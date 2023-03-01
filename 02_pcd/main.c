@@ -11,9 +11,11 @@
 #define MEM_SIZE_MAX_PCDEV3	 512
 #define MEM_SIZE_MAX_PCDEV4	 1024
 
+#define NO_OF_DEVICES		 4
+
 /* print message with module */
 #undef pr_fmt
-#define pr_fmt(fmt) "%s : " fmt, __func__
+#define pr_fmt(fmt) "[%s] : " fmt, __func__
 
 
 /* Add module description */
@@ -22,20 +24,68 @@ MODULE_AUTHOR("zoanana990");
 MODULE_DESCRIPTION("pseudo memory character device driver");
 
 /* pseudo device's memory */
-char device_buffer[DEV_MEM_SIZE];
+char device_buffer_pcdev1[MEM_SIZE_MAX_PCDEV1];
+char device_buffer_pcdev2[MEM_SIZE_MAX_PCDEV2];
+char device_buffer_pcdev3[MEM_SIZE_MAX_PCDEV3];
+char device_buffer_pcdev4[MEM_SIZE_MAX_PCDEV4];
 
-/* This holds the device number */
-dev_t device_number;
+/* Device private data structure */
+struct pcdev_private_data
+{
+    char 		*buffer;
+    unsigned int	size;
+    const char 		*serial_number;
+    int 		perm;
+    struct cdev 	cdev;
+};
 
-/* global variable for class and device */
-struct class *class_pcd;
-struct device *device_pcd;
+				     
+/* Driver private data structure */
+struct pcdrv_private_data
+{
+    int 			total_devices;
+    dev_t 			device_number;
+    struct class 		*class_pcd;
+    struct device 		*device_pcd;
+    struct pcdev_private_data 	pcdev_data[NO_OF_DEVICES];
+};
 
-/* Cdev variable */
-struct cdev pcd_cdev;
+/* global variable */
+struct pcdrv_private_data pcdrv_data = 
+{
+    .total_devices = NO_OF_DEVICES,
+    .pcdev_data = {
+	[0] = {
+	    .buffer = device_buffer_pcdev1,
+	    .size = MEM_SIZE_MAX_PCDEV1,
+	    .serial_number = "ap;ijdbf",
+	    .perm = 0x1 /* RDONLY */
+	},
+	[1] = {
+	    .buffer = device_buffer_pcdev1,
+	    .size = MEM_SIZE_MAX_PCDEV1,
+	    .serial_number = "ap;ijdbf",
+	    .perm = 0x10 /* WRONLY */
+	},
+	[2] = {
+	    .buffer = device_buffer_pcdev1,
+	    .size = MEM_SIZE_MAX_PCDEV1,
+	    .serial_number = "ap;ijdbf",
+	    .perm = 0x11 /* RDWR */
+	},
+	[3] = {
+	    .buffer = device_buffer_pcdev1,
+	    .size = MEM_SIZE_MAX_PCDEV1,
+	    .serial_number = "ap;ijdbf",
+	    .perm = 0x11 /* RDWR */
+	},
+    }
+};
 
 loff_t pcd_lseek(struct file *filp, loff_t offset, int whence)
 {
+    return 0;
+#if 0
     loff_t temp;
 
     pr_info("lseek requested\n");
@@ -66,10 +116,14 @@ loff_t pcd_lseek(struct file *filp, loff_t offset, int whence)
 
     pr_info("New Value of the file position = %lld\n", filp->f_pos);
     return filp->f_pos;
+#endif
 }
 
 ssize_t pcd_read(struct file * filp, char __user *buff, size_t count, loff_t *f_pos)
 {
+    return 0;
+
+#if 0
     /* current file position */
     pr_info("Current file position = %lld\n", *f_pos);
 
@@ -88,10 +142,14 @@ ssize_t pcd_read(struct file * filp, char __user *buff, size_t count, loff_t *f_
     pr_info("Updated file position = %lld\n", *f_pos);
 
     return count;
+#endif
+
 }
 
 ssize_t pcd_write(struct file *filp, const char __user *buff, size_t count, loff_t *f_pos)
 {
+    return 0;
+#if 0
     /* current file position */
     pr_info("Current file position = %lld\n", *f_pos);
 
@@ -116,6 +174,8 @@ ssize_t pcd_write(struct file *filp, const char __user *buff, size_t count, loff
     pr_info("Updated file position = %lld\n", *f_pos);
 
     return count;
+
+#endif
 }
 
 /* This driver is pseudo device, thus we don't need to implement it */
@@ -144,7 +204,9 @@ struct file_operations pcd_ops =
 
 static int __init pcd_module_init(void)
 {
-    
+    return 0;
+
+#if 0
     /* return value for the linux function */
     int ret;
 
@@ -209,15 +271,18 @@ unregister_character_device:
 fail:
     return ret;
 
+#endif
 }
 
 static void __exit pcd_module_cleanup(void)
 {
+#if 0
     device_destroy(class_pcd, device_number);
     class_destroy(class_pcd);
     cdev_del(&pcd_cdev);
     unregister_chrdev_region(device_number, 1);
     pr_info("Module cleanup successfully\n");
+#endif
     return;
 }
 
