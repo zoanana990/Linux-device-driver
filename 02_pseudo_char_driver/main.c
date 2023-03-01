@@ -6,7 +6,10 @@
 #include <linux/uaccess.h>
 
 /* MACRO DEFINITION */
-#define DEV_MEM_SIZE 512
+#define MEM_SIZE_MAX_PCDEV1	 512
+#define MEM_SIZE_MAX_PCDEV2	 1024
+#define MEM_SIZE_MAX_PCDEV3	 512
+#define MEM_SIZE_MAX_PCDEV4	 1024
 
 /* print message with module */
 #undef pr_fmt
