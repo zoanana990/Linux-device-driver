@@ -121,18 +121,19 @@ loff_t pcd_lseek(struct file *filp, loff_t offset, int whence)
 
 ssize_t pcd_read(struct file * filp, char __user *buff, size_t count, loff_t *f_pos)
 {
-    return 0;
+    
+    struct pcdev_private_data *pcdev_data = (struct pcdev_private_data *) filp->private_data;
+    int max_size = pcdev_data->size;
 
-#if 0
-    /* current file position */
+    pr_info("Read requested  for %zu bytes\n", count);
     pr_info("Current file position = %lld\n", *f_pos);
 
     /* adjust count, if it is bigger than the memory size */
-    if((*f_pos + count) > DEV_MEM_SIZE)
-        count = DEV_MEM_SIZE - *f_pos;
+    if((*f_pos + count) > max_size)
+        count = max_size - *f_pos;
 
     /* copy the data to the user space */
-    if(copy_to_user(buff, &device_buffer[*f_pos], count))
+    if(copy_to_user(buff, pcdev_data->buffer+(*f_pos), count))
         return -EFAULT;
 
     /* update the current file position */
@@ -142,8 +143,6 @@ ssize_t pcd_read(struct file * filp, char __user *buff, size_t count, loff_t *f_
     pr_info("Updated file position = %lld\n", *f_pos);
 
     return count;
-#endif
-
 }
 
 ssize_t pcd_write(struct file *filp, const char __user *buff, size_t count, loff_t *f_pos)
@@ -178,9 +177,41 @@ ssize_t pcd_write(struct file *filp, const char __user *buff, size_t count, loff
 #endif
 }
 
+int check_permission(void)
+{
+    /* TODO */
+    return 0;
+}
+
+
 /* This driver is pseudo device, thus we don't need to implement it */
 int pcd_open(struct inode *inode, struct file *filp)
 {
+    int ret, minor_n;
+
+    struct pcdev_private_data *pcdev_data;
+
+    /* 1. find out on which device file open was attempted by the user space 
+     *    We need to use `inode` structure here
+     *    `inode` member: dev_t rdev   -> device number
+     *                    cdev *i_cdev -> character device
+     */
+    minor_n = MINOR(inode->i_rdev);
+    pr_info("minor access = %d\n", minor_n);
+
+    /* 2. get device's private data structure 
+     *    container_of(ptr_member, structure_ type, name_of_member)
+     *    get the address of the member
+     */
+    pcdev_data = container_of(inode->i_cdev, struct pcdev_private_data, cdev);
+
+    /* Supply device private data to other methods of the driver */
+    filp->private_data = pcdev_data;
+
+    /* 3. check permission */
+    ret = check_permission();
+    (!ret) ? pr_info("open was successfully\n") : pr_info("open was unsuccessfully");
+
     pr_info("Open was successful\n");
     return 0;
 }
