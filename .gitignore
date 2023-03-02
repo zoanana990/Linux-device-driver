@@ -27,3 +27,5 @@
 *.order
 
 tags
+#.out
+*.out
