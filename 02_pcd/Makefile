@@ -17,3 +17,5 @@ help:
 tag:
 	ctags -R
 	cscope -Rbqk
+test: test.c
+	gcc -o test test.c
