@@ -1,4 +1,5 @@
-obj-m 		:= pcd_n.o
+File		:= pcd_device_setup
+obj-m 		:= $(File).o
 PWD 		:= $(CURDIR)
 ARCH		:= arm
 CROSS_COMPILE	:= arm-linux-gnueabihf-
@@ -20,10 +21,10 @@ tag:
 	ctags -R
 	cscope -Rbqk
 load:
-	sudo insmod pcd_n.ko
+	sudo insmod $(File).ko
 
 unload:
-	sudo rmmod pcd_n.ko
+	sudo rmmod $(File).ko
 
 test: test.c
 	$(USER_CC) $(USER_C_FLAGS) test.c -o test

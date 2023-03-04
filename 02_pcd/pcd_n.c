@@ -63,13 +63,13 @@ struct pcdrv_private_data pcdrv_data =
 	    .buffer = device_buffer_pcdev1,
 	    .size = MEM_SIZE_MAX_PCDEV1,
 	    .serial_number = "ap;ijdbf",
-	    .perm = RDONLY
+	    .perm = RDWR
 	},
 	[1] = {
 	    .buffer = device_buffer_pcdev1,
 	    .size = MEM_SIZE_MAX_PCDEV1,
 	    .serial_number = "ap;ijdbf",
-	    .perm = WRONLY
+	    .perm = RDWR
 	},
 	[2] = {
 	    .buffer = device_buffer_pcdev1,
@@ -184,7 +184,7 @@ ssize_t pcd_write(struct file *filp, const char __user *buff, size_t count, loff
 
 int check_permission(int dev_perm, int acc_mode)
 {
-    pr_info("the device permission: %d, the access mode is %d\n", dev_perm, acc_mode);    
+    pr_info("the device permission: 0x%x, the access mode is 0x%xd\n", dev_perm, acc_mode);    
 	
     /* Check the access mode for the device */
     if(dev_perm == RDWR)

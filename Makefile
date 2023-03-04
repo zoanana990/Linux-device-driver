@@ -11,3 +11,7 @@ clean: $(SUBDIRS)
 	for dir in $(SUBDIRS); do 	\
 		$(MAKE) -C $$dir clean; \
 	done
+tag:
+	ctags -R
+	cscope -Rbqk
+
