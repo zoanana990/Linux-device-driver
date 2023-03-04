@@ -4,18 +4,11 @@
 #include <linux/device.h>
 #include <linux/kdev_t.h>
 #include <linux/uaccess.h>
+#include <linux/platform_device.h>
+
+#include "platform.h"
 
 /* MACRO DEFINITION */
-#define MEM_SIZE_MAX_PCDEV1	 512
-#define MEM_SIZE_MAX_PCDEV2	 1024
-#define MEM_SIZE_MAX_PCDEV3	 512
-#define MEM_SIZE_MAX_PCDEV4	 1024
-
-#define NO_OF_DEVICES		 4
-
-#define RDONLY			 0x01
-#define WRONLY		         0x10
-#define RDWR			 0x11
 
 /* print message with module */
 #undef pr_fmt
@@ -26,12 +19,6 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("zoanana990");
 MODULE_DESCRIPTION("pseudo memory character device driver");
-
-/* pseudo device's memory */
-char device_buffer_pcdev1[MEM_SIZE_MAX_PCDEV1];
-char device_buffer_pcdev2[MEM_SIZE_MAX_PCDEV2];
-char device_buffer_pcdev3[MEM_SIZE_MAX_PCDEV3];
-char device_buffer_pcdev4[MEM_SIZE_MAX_PCDEV4];
 
 /* Device private data structure */
 struct pcdev_private_data
@@ -51,40 +38,11 @@ struct pcdrv_private_data
     dev_t 			device_number;
     struct class 		*class_pcd;
     struct device 		*device_pcd;
-    struct pcdev_private_data 	pcdev_data[NO_OF_DEVICES];
+    struct pcdev_private_data 	pcdev_data[10];
 };
 
 /* global variable */
-struct pcdrv_private_data pcdrv_data = 
-{
-    .total_devices = NO_OF_DEVICES,
-    .pcdev_data = {
-	[0] = {
-	    .buffer = device_buffer_pcdev1,
-	    .size = MEM_SIZE_MAX_PCDEV1,
-	    .serial_number = "ap;ijdbf",
-	    .perm = RDWR
-	},
-	[1] = {
-	    .buffer = device_buffer_pcdev1,
-	    .size = MEM_SIZE_MAX_PCDEV1,
-	    .serial_number = "ap;ijdbf",
-	    .perm = RDWR
-	},
-	[2] = {
-	    .buffer = device_buffer_pcdev1,
-	    .size = MEM_SIZE_MAX_PCDEV1,
-	    .serial_number = "ap;ijdbf",
-	    .perm = RDWR
-	},
-	[3] = {
-	    .buffer = device_buffer_pcdev1,
-	    .size = MEM_SIZE_MAX_PCDEV1,
-	    .serial_number = "ap;ijdbf",
-	    .perm = RDWR
-	},
-    }
-};
+struct pcdrv_private_data pcdrv_data;
 
 loff_t pcd_lseek(struct file *filp, loff_t offset, int whence)
 {
@@ -133,6 +91,7 @@ int pcd_release(struct inode *inode, struct file *filp)
 /* file oeprations of the driver */
 struct file_operations pcd_ops = 
 {
+    .owner = THIS_MODULE,
     .open = pcd_open,
     .write = pcd_write,
     .read = pcd_read,
@@ -140,6 +99,26 @@ struct file_operations pcd_ops =
     .release = pcd_release,
 };
 
+/* gets called when the device is found from the system */
+int pcd_platform_driver_probe(struct platform_device *pdev)
+{
+    return 0;
+}
+
+/* when the device is removed from the system */
+int pcd_platform_driver_remove(struct platform_device *pdev)
+{
+    return 0;
+}
+
+struct platform_driver pcd_platform_driver = 
+{
+    .probe = pcd_platform_driver_probe,
+    .remove = pcd_platform_driver_remove,
+    .driver = {
+	    .name = "pseudo-char-device"
+    }
+};
 
 static int __init pcd_module_init(void)
 {
@@ -153,3 +132,7 @@ static void __exit pcd_module_cleanup(void)
 
 module_init(pcd_module_init);
 module_exit(pcd_module_cleanup);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("zoanana990");
+MODULE_DESCRIPTION("A pseudo character platform driver which handles n platform pcdevs");

@@ -1,5 +1,5 @@
 File		:= pcd_device_setup
-obj-m 		:= $(File).o
+obj-m 		:= $(File).o pcd_platform_driver.o
 PWD 		:= $(CURDIR)
 ARCH		:= arm
 CROSS_COMPILE	:= arm-linux-gnueabihf-
