@@ -4,6 +4,8 @@ ARCH		:= arm
 CROSS_COMPILE	:= arm-linux-gnueabihf-
 BBB_SOURCE	:= /home/khienh/workspace/ldd/source/linux_bbb_4.14/
 
+USER_CC		:= gcc
+USER_C_FLAGS	:= -pthread
 
 all: 
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
@@ -17,5 +19,6 @@ help:
 tag:
 	ctags -R
 	cscope -Rbqk
+
 test: test.c
-	gcc -o test test.c
+	$(USER_CC) $(USER_C_FLAGS) test.c -o test
