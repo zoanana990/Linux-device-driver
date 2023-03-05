@@ -1,5 +1,6 @@
-File		:= pcd_device_setup
-obj-m 		:= $(File).o pcd_platform_driver.o
+Device		:= pcd_device_setup
+Driver		:= pcd_platform_driver
+obj-m 		:= $(Device).o $(Driver).o
 PWD 		:= $(CURDIR)
 ARCH		:= arm
 CROSS_COMPILE	:= arm-linux-gnueabihf-
@@ -20,11 +21,17 @@ help:
 tag:
 	ctags -R
 	cscope -Rbqk
-load:
-	sudo insmod $(File).ko
+load_device:
+	sudo insmod $(Device).ko
 
-unload:
-	sudo rmmod $(File).ko
+load_driver:
+	sudo insmod $(Driver).ko
+
+unload_device:
+	sudo rmmod $(Device).ko
+
+unload_driver:
+	sudo rmmod $(Driver).ko
 
 test: test.c
 	$(USER_CC) $(USER_C_FLAGS) test.c -o test
